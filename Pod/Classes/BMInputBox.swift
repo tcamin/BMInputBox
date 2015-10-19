@@ -400,11 +400,11 @@ public class BMInputBox: UIView {
     
     private func validateInput () -> Bool {
         
+        if self.textInput?.text == "" {
+            return false
+        }
+        
         if self.style == .NumberInput && (self.minimumValue != nil || self.maximumValue != nil) {
-            
-            if self.textInput?.text == "" {
-                return false
-            }
             
             let formatter = NSNumberFormatter()
             formatter.numberStyle = NSNumberFormatterStyle.DecimalStyle;

@@ -227,17 +227,21 @@ public class BMInputBox: UIView {
             
         }
         
+        /**
+        *  Validation Label
+        */
+        
+        self.validationLabel = UILabel(frame: CGRectMake(padding, self.textInput!.frame.origin.y + self.textInput!.frame.size.height + 5, width, 20))
+        self.validationLabel.numberOfLines = 1;
+        self.validationLabel.font = UIFont(name: "HelveticaNeue-Light", size: 12)
+        
+        self.validationLabel.textAlignment = .Center
+        self.validationLabel.textColor = (self.blurEffectStyle == .Dark) ? UIColor.whiteColor() : UIColor(red: 220/255, green: 53/255, blue: 34/255, alpha: 1)
+        self.visualEffectView?.contentView.addSubview(self.validationLabel)
+        
         if self.style == .NumberInput {
             self.textInput?.keyboardType = .NumberPad
             self.textInput?.addTarget(self, action: "textInputDidChange", forControlEvents: .EditingChanged)
-            
-            /**
-            *  Validation Label
-            */
-            
-            self.validationLabel = UILabel(frame: CGRectMake(padding, self.textInput!.frame.origin.y + self.textInput!.frame.size.height + 5, width, 20))
-            self.validationLabel.numberOfLines = 1;
-            self.validationLabel.font = UIFont(name: "HelveticaNeue-Light", size: 12)
             
             let messageString: NSString? = self.validationLabelText
             
@@ -250,10 +254,6 @@ public class BMInputBox: UIView {
             else if (self.minimumValue != nil && self.maximumValue != nil) {
                 self.validationLabel.text = NSString(format: messageString ?? "A value between %@ and %@.", self.minimumValue!, self.maximumValue!) as String
             }
-            
-            self.validationLabel.textAlignment = .Center
-            self.validationLabel.textColor = (self.blurEffectStyle == .Dark) ? UIColor.whiteColor() : UIColor(red: 220/255, green: 53/255, blue: 34/255, alpha: 1)
-            self.visualEffectView?.contentView.addSubview(self.validationLabel)
             
             // Extending the frame of the box
             var extendedFrame = self.frame
@@ -356,6 +356,10 @@ public class BMInputBox: UIView {
     
     /// Closure executed when user cancels submission
     public var onCancel: (() -> Void)!
+
+    /// Closure executed to validate current input
+    public var onValidate: ((value: AnyObject...) -> String?)!
+
     
     func cancelButtonTapped () {
         if self.onCancel != nil {
@@ -399,41 +403,56 @@ public class BMInputBox: UIView {
         else {
             self.animateLabel()
         }
-        
     }
     
     private func validateInput () -> Bool {
-        
-        if self.textInput?.text == "" {
-            return false
+        if self.onValidate != nil {
+            let valueToReturn: String? = self.textInput!.text
+            
+            let validationMessage: String?
+            if let value2ToReturn = self.secureInput?.text {
+                validationMessage = self.onValidate(value: valueToReturn!, value2ToReturn)
+            }
+            else {
+                validationMessage = self.onValidate(value: valueToReturn!)
+            }
+
+            self.validationLabel.text = validationMessage
+            
+            return validationMessage == nil
         }
-        
-        if self.style == .NumberInput && (self.minimumValue != nil || self.maximumValue != nil) {
-            
-            let formatter = NSNumberFormatter()
-            formatter.numberStyle = NSNumberFormatterStyle.DecimalStyle;
-            
-            // BMInputBoxStyleNumberInput is using a dot for decimals independent of the locale
-            formatter.decimalSeparator = "."
-            let userValue = formatter.numberFromString(self.textInput!.text!)!
-            
-            // Lower than minimum value
-            if self.minimumValue != nil {
-                if self.minimumValue.doubleValue > userValue.doubleValue {
-                    return false
-                }
+        else {
+            if self.textInput?.text == "" {
+                return false
             }
             
-            // Greater maximum value
-            if self.maximumValue != nil {
-                if self.maximumValue.doubleValue < userValue.doubleValue {
-                    return false
+            if self.style == .NumberInput && (self.minimumValue != nil || self.maximumValue != nil) {
+                
+                let formatter = NSNumberFormatter()
+                formatter.numberStyle = NSNumberFormatterStyle.DecimalStyle;
+                
+                // BMInputBoxStyleNumberInput is using a dot for decimals independent of the locale
+                formatter.decimalSeparator = "."
+                let userValue = formatter.numberFromString(self.textInput!.text!)!
+                
+                // Lower than minimum value
+                if self.minimumValue != nil {
+                    if self.minimumValue.doubleValue > userValue.doubleValue {
+                        return false
+                    }
                 }
+                
+                // Greater maximum value
+                if self.maximumValue != nil {
+                    if self.maximumValue.doubleValue < userValue.doubleValue {
+                        return false
+                    }
+                }
+                
             }
             
+            return true
         }
-        
-        return true
     }
     
     private func animateLabel () {

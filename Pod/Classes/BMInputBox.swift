@@ -280,6 +280,10 @@ public class BMInputBox: UIView {
             element.layer.borderWidth = 0.5
             element.backgroundColor = (self.blurEffectStyle == .Dark) ? UIColor(white: 1, alpha: 0.07) : UIColor(white: 1, alpha: 0.5)
             self.visualEffectView?.contentView.addSubview(element)
+            
+            let textViewInsidePadding = UIView(frame: CGRectMake(0, 0, 10, 35))
+            element.leftView = textViewInsidePadding
+            element.leftViewMode = .Always
         }
         
         
